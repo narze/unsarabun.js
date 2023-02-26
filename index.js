@@ -1,17 +1,35 @@
+#!/usr/bin/env node
+
 const fs = require("fs")
+const path = require("path")
+const glob = require("glob")
 
-const filePath = process.argv[2]
+let globPattern = process.argv[2]
+const absoluteDir = process.cwd()
+const numeralRegex = /[๐-๙]/g
 
-try {
-  const data = fs.readFileSync(filePath, "utf8")
+glob(globPattern, { cwd: absoluteDir }, (err, files) => {
+  if (err) {
+    console.error(err)
+    return
+  }
 
-  const arabicData = data.replace(
-    /[๐-๙]/g,
-    (match) => match.charCodeAt(0) - 3664
-  )
+  files.forEach((file) => {
+    const absolutePath = path.resolve(absoluteDir, file)
 
-  fs.writeFileSync(filePath, arabicData, "utf8")
-  console.log("Un-sarabun'd")
-} catch (err) {
-  console.error(err)
-}
+    try {
+      const data = fs.readFileSync(absolutePath, "utf8")
+      let changedCount = 0
+
+      const arabicData = data.replace(numeralRegex, (match) => {
+        changedCount++
+        return match.charCodeAt(0) - 3664
+      })
+
+      fs.writeFileSync(absolutePath, arabicData, "utf8")
+      console.log(`Un-sarabun'd ${file} (${changedCount} characters changed)`)
+    } catch (err) {
+      console.error(err)
+    }
+  })
+})
